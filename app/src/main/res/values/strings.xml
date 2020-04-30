@@ -1,5 +1,9 @@
 <resources>
     <string name="app_name">Task Timer</string>
-    <string name="title_activity_main_fragment">MainActivityFragment</string>
     <string name="action_settings">Settings</string>
+    <string name="menutitle_addTask">Add Task</string>
+    <string name="menutitle_showDurations">Durations Report</string>
+    <string name="menutitle_settings">Settings</string>
+    <string name="menutitle_showAbout">About TaskTimer</string>
+    <string name="menutitle_generate">Generate data</string>
 </resources>
