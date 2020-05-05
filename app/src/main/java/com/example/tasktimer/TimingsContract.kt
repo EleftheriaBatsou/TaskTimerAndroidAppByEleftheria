@@ -21,10 +21,10 @@ object TimingsContract {
         const val ID = BaseColumns._ID
         const val TIMING_TASK_ID = "TaskId"
         const val TIMING_START_TIME = "StartTime"
-        const val TIMING_DURATION = "Duration"
+        const val TIMING_DURATION  = "Duration"
     }
 
-    fun getId(uri: Uri): Long{
+    fun getId(uri: Uri): Long {
         return ContentUris.parseId(uri)
     }
 

@@ -29,6 +29,7 @@ private const val TASK_DURATIONS_ID = 401
 
 val CONTENT_AUTHORITY_URI: Uri = Uri.parse("content://$CONTENT_AUTHORITY")
 
+@Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
 class AppProvider: ContentProvider() {
 
     private val uriMatcher by lazy { buildUriMatcher() }
@@ -38,15 +39,15 @@ class AppProvider: ContentProvider() {
         val matcher = UriMatcher(UriMatcher.NO_MATCH)
 
         // e.g. content://learnprogramming.academy.tasktimer.provider/Tasks
-        matcher.addURI(CONTENT_AUTHORITY, TasksContract.TABLE_NAME, TASKS);
+        matcher.addURI(CONTENT_AUTHORITY, TasksContract.TABLE_NAME, TASKS)
 
         // e.g. content: com.example.tasktimer.provider/Tasks/7
         matcher.addURI(CONTENT_AUTHORITY, "${TasksContract.TABLE_NAME}/#", TASKS_ID)
 
-        matcher.addURI(CONTENT_AUTHORITY, TimingsContract.TABLE_NAME, TIMINGS);
+        matcher.addURI(CONTENT_AUTHORITY, TimingsContract.TABLE_NAME, TIMINGS)
         matcher.addURI(CONTENT_AUTHORITY, "${TimingsContract.TABLE_NAME}/#", TIMINGS_ID)
 
-//        matcher.addURI(CONTENT_AUTHORITY, DurationsContract.TABLE_NAME, TASK_DURATIONS);
+//        matcher.addURI(CONTENT_AUTHORITY, DurationsContract.TABLE_NAME, TASK_DURATIONS)
 //        matcher.addURI(CONTENT_AUTHORITY, "${DurationsContract.TABLE_NAME}/#", TASK_DURATIONS_ID)
 
 
@@ -118,7 +119,7 @@ class AppProvider: ContentProvider() {
             else -> throw IllegalArgumentException("Unknown URI: $uri")
         }
 
-        val db = context?.let { AppDatabase.getInstance(it).readableDatabase }
+        val db = AppDatabase.getInstance(context!!).readableDatabase
         val cursor = queryBuilder.query(db, projection, selection, selectionArgs, null, null, sortOrder)
         Log.d(TAG, "query: rows in returned cursor = ${cursor.count}") // TODO remove this line
 
@@ -136,8 +137,8 @@ class AppProvider: ContentProvider() {
         when (match){
 
             TASKS -> {
-                val db = context?.let { AppDatabase.getInstance(it).writableDatabase }
-                recordId = db!!.insert(TasksContract.TABLE_NAME, null, values)
+                val db = AppDatabase.getInstance(context!!).readableDatabase
+                recordId = db.insert(TasksContract.TABLE_NAME, null, values)
                 if (recordId != -1L) {
                     returnUri = TasksContract.buildUriFromId(recordId)
                 } else {
@@ -146,8 +147,8 @@ class AppProvider: ContentProvider() {
             }
 
             TIMINGS-> {
-                val db = context?.let { AppDatabase.getInstance(it).writableDatabase }
-                recordId = db!!.insert(TimingsContract.TABLE_NAME, null, values)
+                val db = AppDatabase.getInstance(context!!).readableDatabase
+                recordId = db.insert(TimingsContract.TABLE_NAME, null, values)
                 if (recordId != -1L) {
                     returnUri = TimingsContract.buildUriFromId(recordId)
                 } else {
@@ -156,6 +157,12 @@ class AppProvider: ContentProvider() {
             }
 
             else -> throw IllegalArgumentException("Unknown uri: $uri")
+        }
+
+        if (recordId > 0) {
+            // something was inserted
+            Log.d(TAG, "insert: Setting notifyChange with $uri")
+            context?.contentResolver?.notifyChange(uri, null)
         }
 
         Log.d(TAG, "Exiting insert, returning $returnUri")
@@ -173,12 +180,13 @@ class AppProvider: ContentProvider() {
         when(match) {
 
             TASKS -> {
-                val db = context?.let { AppDatabase.getInstance(it).writableDatabase }
-                count = db!!.update(TasksContract.TABLE_NAME, values, selection, selectionArgs)
+                val db = AppDatabase.getInstance(context!!).writableDatabase
+                count = db.update(TasksContract.TABLE_NAME, values, selection, selectionArgs)
+
             }
 
             TASKS_ID -> {
-                val db = context?.let { AppDatabase.getInstance(it).writableDatabase }
+                val db = AppDatabase.getInstance(context!!).writableDatabase
                 val id = TasksContract.getId(uri)
                 selectionCriteria = "${TasksContract.Columns.ID} = $id"
 
@@ -186,16 +194,16 @@ class AppProvider: ContentProvider() {
                     selectionCriteria += " AND ($selection)"
                 }
 
-                count = db!!.update(TasksContract.TABLE_NAME, values, selectionCriteria, selectionArgs)
+                count = db.update(TasksContract.TABLE_NAME, values, selectionCriteria, selectionArgs)
             }
 
             TIMINGS -> {
-                val db = context?.let { AppDatabase.getInstance(it).writableDatabase }
-                count = db!!.update(TimingsContract.TABLE_NAME, values, selection, selectionArgs)
+                val db = AppDatabase.getInstance(context!!).writableDatabase
+                count = db.update(TimingsContract.TABLE_NAME, values, selection, selectionArgs)
             }
 
             TIMINGS_ID -> {
-                val db = context?.let { AppDatabase.getInstance(it).writableDatabase }
+                val db = AppDatabase.getInstance(context!!).writableDatabase
                 val id = TimingsContract.getId(uri)
                 selectionCriteria = "${TimingsContract.Columns.ID} = $id"
 
@@ -203,10 +211,17 @@ class AppProvider: ContentProvider() {
                     selectionCriteria += " AND ($selection)"
                 }
 
-                count = db!!.update(TimingsContract.TABLE_NAME, values, selectionCriteria, selectionArgs)
+                count = db.update(TimingsContract.TABLE_NAME, values, selectionCriteria, selectionArgs)
             }
 
             else -> throw IllegalArgumentException("Unknown uri: $uri")
+        }
+
+        if (count > 0) {
+            // something was updated
+            Log.d(TAG, "update: Setting notifyChange with $uri")
+
+            context?.contentResolver?.notifyChange(uri, null)
         }
 
         Log.d(TAG, "Exiting update, returning $count")
@@ -224,12 +239,12 @@ class AppProvider: ContentProvider() {
         when(match) {
 
             TASKS -> {
-                val db = context?.let { AppDatabase.getInstance(it).writableDatabase }
-                count = db!!.delete(TasksContract.TABLE_NAME, selection, selectionArgs)
+                val db = AppDatabase.getInstance(context!!).writableDatabase
+                count = db.delete(TasksContract.TABLE_NAME, selection, selectionArgs)
             }
 
             TASKS_ID -> {
-                val db = context?.let { AppDatabase.getInstance(it).writableDatabase }
+                val db = AppDatabase.getInstance(context!!).writableDatabase
                 val id = TasksContract.getId(uri)
                 selectionCriteria = "${TasksContract.Columns.ID} = $id"
 
@@ -237,16 +252,16 @@ class AppProvider: ContentProvider() {
                     selectionCriteria += " AND ($selection)"
                 }
 
-                count = db!!.delete(TasksContract.TABLE_NAME, selectionCriteria, selectionArgs)
+                count = db.delete(TasksContract.TABLE_NAME, selectionCriteria, selectionArgs)
             }
 
             TIMINGS -> {
-                val db = context?.let { AppDatabase.getInstance(it).writableDatabase }
-                count = db!!.delete(TimingsContract.TABLE_NAME, selection, selectionArgs)
+                val db = AppDatabase.getInstance(context!!).writableDatabase
+                count = db.delete(TimingsContract.TABLE_NAME, selection, selectionArgs)
             }
 
             TIMINGS_ID -> {
-                val db = context?.let { AppDatabase.getInstance(it).writableDatabase }
+                val db = AppDatabase.getInstance(context!!).writableDatabase
                 val id = TimingsContract.getId(uri)
                 selectionCriteria = "${TimingsContract.Columns.ID} = $id"
 
@@ -254,15 +269,20 @@ class AppProvider: ContentProvider() {
                     selectionCriteria += " AND ($selection)"
                 }
 
-                count = db!!.delete(TimingsContract.TABLE_NAME, selectionCriteria, selectionArgs)
+                count = db.delete(TimingsContract.TABLE_NAME, selectionCriteria, selectionArgs)
             }
 
             else -> throw IllegalArgumentException("Unknown uri: $uri")
         }
 
-        Log.d(TAG, "Exiting update, returning $count")
+        if (count > 0) {
+            // something was deleted
+            Log.d(TAG, "delete: Setting notifyChange with $uri")
+
+            context?.contentResolver?.notifyChange(uri, null)
+        }
+
+        Log.d(TAG, "Exiting delete, returning $count")
         return count
     }
-
-
 }
